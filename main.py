@@ -1,8 +1,10 @@
 import os
 import smtplib
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
 
 import requests
-from flask import Flask, render_template, url_for, request
+from flask import Flask, render_template, request
 
 app = Flask(__name__)
 api_endpoint = "https://api.npoint.io/6da3bd5b6bb70128aca2"
@@ -32,12 +34,21 @@ def contact():
 
 
 def send_email(name, email, phone, message):
-    with smtplib.SMTP_SSL("smtp.gmail.com") as connection:
-        connection.login(user=my_email, password=password)
-        connection.sendmail(
-            from_addr=my_email,
-            to_addrs="szabo.gergo.bme@gmail.com",
-            msg=f"Subject:New blog message received\n\nName: {name}\nEmail: {email}\nPhone: {phone}\nMessage:{message}")
+    sender_email = my_email
+    sender_password = password
+    recipient_email = "szabo.gergo.bme@gmail.com"
+    subject = "New blog message received"
+    body = f"Name: {name}\nEmail: {email}\nPhone: {phone}\nMessage:{message}"
+
+    message = MIMEMultipart()
+    message['Subject'] = subject
+    message['From'] = sender_email
+    message['To'] = recipient_email
+    html_part = MIMEText(body)
+    message.attach(html_part)
+    with smtplib.SMTP_SSL('smtp.gmail.com', 465) as server:
+        server.login(sender_email, sender_password)
+        server.sendmail(sender_email, recipient_email, message.as_string())
 
 
 @app.route('/post/<blog_id>')
